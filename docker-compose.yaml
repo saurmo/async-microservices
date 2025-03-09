@@ -1,0 +1,153 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:latest
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: kD{30@42FWEc
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: orders
+    networks:
+      - app_network
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh mongodb://localhost:27017/test --quiet
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s  
+      timeout: 5s    
+      retries: 3     
+      start_period: 5s  
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - app_network
+    volumes:
+      - es_data:/challenge-nodejs/elasticsearch/data
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - RABBITMQ_URL=amqp://guest:kD{30@42FWEc@rabbitmq:5672
+      - MONGO_URL=mongodb://mongodb:27017/orders
+      - REDIS_URL=redis://redis:6379
+      - CACHE_TIME=300
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    networks:
+      - app_network
+    volumes:
+      - ./order-service:/app
+      - /app/node_modules
+    command: sh -c "npm start"
+
+  logging-service:
+    build: ./logging-service
+    container_name: logging-service
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "3001:3001" 
+    environment:
+      - PORT=3001
+      - RABBITMQ_URL=amqp://guest:kD{30@42FWEc@rabbitmq:5672
+      - MONGO_URL=mongodb://mongodb:27017/orders
+      - REDIS_URL=redis://redis:6379
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    networks:
+      - app_network
+    volumes:
+      - ./logging-service:/app
+      - /app/node_modules
+    command: sh -c "npm start"
+
+  queue-worker:
+    build: ./queue-worker
+    container_name: queue-worker
+    depends_on:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_URL=amqp://guest:kD{30@42FWEc@rabbitmq:5672
+      - MONGO_URL=mongodb://mongodb:27017/orders
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    networks:
+      - app_network
+    volumes:
+      - ./queue-worker:/app
+      - /app/node_modules
+    command: sh -c "npm start"
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  es_data:

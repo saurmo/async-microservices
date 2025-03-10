@@ -15,7 +15,7 @@ services:
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
       interval: 10s
-      retries: 3
+      retries: 5
       start_period: 10s
       timeout: 5s
 
@@ -33,7 +33,7 @@ services:
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh mongodb://localhost:27017/test --quiet
       interval: 10s
-      retries: 3
+      retries: 5
       start_period: 10s
       timeout: 5s
 
@@ -48,7 +48,7 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s  
       timeout: 5s    
-      retries: 3     
+      retries: 5     
       start_period: 5s  
 
   elasticsearch:
@@ -91,7 +91,6 @@ services:
     volumes:
       - ./order-service:/app
       - /app/node_modules
-      - /app/dist
     command: sh -c "npm run build && npm start"
 
   logging-service:
@@ -119,7 +118,6 @@ services:
     volumes:
       - ./logging-service:/app
       - /app/node_modules
-      - /app/dist
     command: sh -c "npm run build && npm start"
 
   queue-worker:
@@ -143,7 +141,6 @@ services:
     volumes:
       - ./queue-worker:/app
       - /app/node_modules
-      - /app/dist
     command: sh -c "npm run build && npm start"
 
 networks:

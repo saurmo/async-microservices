@@ -89,9 +89,9 @@ services:
     networks:
       - app_network
     volumes:
-      - ./order-service:/app
+      - .:/app
       - /app/node_modules
-    command: sh -c "npm start"
+    command: sh -c "npm run build && npm start"
 
   logging-service:
     build: ./logging-service
@@ -116,14 +116,13 @@ services:
     networks:
       - app_network
     volumes:
-      - ./logging-service:/app
+      - .:/app
       - /app/node_modules
-    command: sh -c "npm start"
+    command: sh -c "npm run build && npm start"
 
   queue-worker:
     build: ./queue-worker
     container_name: queue-worker
-    depends_on:
     depends_on:
       mongodb:
         condition: service_healthy
@@ -140,9 +139,9 @@ services:
     networks:
       - app_network
     volumes:
-      - ./queue-worker:/app
+      - .:/app
       - /app/node_modules
-    command: sh -c "npm start"
+    command: sh -c "npm run build && npm start"
 
 networks:
   app_network:

@@ -13,10 +13,11 @@ To run this project successfully, ensure you have the following installed on you
 
 1. Clone the repository or download the code.
 2. Open a terminal and navigate to the project directory.
-3. Run `docker-compose up -d --build`.
+3. Docker needs to be running. Run `docker-compose up -d --build`
 This command will:
 - Start **MongoDB**, **Redis**, **RabbitMQ**, and **Elasticsearch**
-- Build and start the **Order Service** ,  **Logging Service**, and **Queue Worker**
+- Build and start the **Order Service** ,  **Logging Service** and **Queue Worker**
+If you don't have the images locally, maybe
 
 4. Wait for the containers to start, ensuring all services are up and running. 
 - Ensure ports `3000`, `3001`, `5672`, `27017`, `6379`, and `9200` are not in use by other applications.
